@@ -1,0 +1,10 @@
+pandas
+warnings
+IPython
+matplotlib
+math
+re
+numpy 
+sklearn
+itertools
+seaborn
