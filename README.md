@@ -1,58 +1,73 @@
 # Copilot_User_Classifier
-# 🕵️‍♂️ Projet Copilote : L'art de vous reconnaître à vos clics
+# Classification Comportementale des Utilisateurs de Logiciel (Projet Copilote)
 
-Imaginez-vous essayer de reconnaître un artiste non pas en voyant ses peintures, mais en analysant uniquement les traces de pinceau laissées sur sa palette. C'est le défi de ce projet !
+Ce projet de Data Science présente une méthodologie pour l'identification d'utilisateurs (variable `util`) basée sur l'analyse de leurs séquences d'actions et de leur comportement en session.
 
-L'objectif est de développer un modèle de classification capable d'identifier un utilisateur (`util`) en se basant uniquement sur la séquence brute de ses actions lors d'une session sur un logiciel.
+L'objectif est de développer un modèle de classification multi-classe robuste, capable de prédire l'identité d'un utilisateur à partir de ses journaux (logs) d'interaction bruts (`train.csv`, `test.csv`).
 
-## 📈 L'histoire de notre enquête : le Feature Engineering
+## 📈 Approche Méthodologique et Feature Engineering
 
-Ce projet est une histoire en deux temps : une première tentative basée sur des généralités, et une seconde qui a compris que... le diable est dans les détails.
+La performance de ce type de classification repose presque entièrement sur la qualité de l'ingénierie des caractéristiques (feature engineering). L'analyse a donc suivi une démarche itérative pour raffiner progressivement la représentation des données de session.
 
-### Acte 1 : L'approche "Comptons les actions"
+### Itération 1 : Modélisation par Fréquence d'Actions
 
-Mon premier instinct face à un fichier `train.csv` contenant plus de 7000 actions uniques ? Simplifier !
+La première approche a consisté à agréger les actions pour réduire la dimensionnalité.
 
-1.  **Le grand nettoyage :** J'ai regroupé ces 7000+ actions en 35 catégories de base (ex: "Création d'écran", "Double-clic", "Lancement d'une stat").
-2.  **L'analyse des habitudes :** J'ai compté les occurrences de chaque catégorie. Pour aller plus loin, j'ai aussi utilisé des **bigrammes** (ex: "Affichage dialogue" → "Exécution bouton") avec `TfidfVectorizer` pour capturer les *séquences* d'actions.
-3.  **Premiers résultats :** J'ai testé plusieurs modèles (`SVC`, `MLP`, `LogisticRegression`). Le `RandomForestClassifier` a largement dominé.
+1.  **Réduction des Caractéristiques :** Les >7000 actions uniques ont été normalisées et regroupées en 35 actions génériques (ex: "Création d'écran", "Double-clic", "Lancement d'une stat").
+2.  **Extraction de Features :**
+    * **Fréquence :** Comptage des occurrences de chaque action générique par session.
+    * **Séquentiel (N-grammes) :** Création de bigrammes (ex: "Action A → Action B") et application de `TfidfVectorizer` pour capturer les transitions d'actions communes.
+    * **Métadonnées :** Ajout du `temps total` de session (calculé via les marqueurs `tXX`) et de la `first_op` / `last_op`.
+3.  **Évaluation Initiale :** Plusieurs modèles ont été évalués (via F1-score macro) :
+    * **`RandomForestClassifier` : ~0.76**
+    * `LogisticRegression` : ~0.58
+    * `MLPClassifier` : ~0.51
+    * `SVC` (divers noyaux) : ~0.12-0.36
 
-C'était un bon début, mais je sentais qu'on passait à côté de l'essentiel.
+Le `RandomForestClassifier` s'est montré le plus performant, mais le score de 0.76 indiquait une perte d'information significative due à l'agrégation des actions.
 
-### Acte 2 : L'illumination "Le 'où' compte plus que le 'quoi'"
+### Itération 2 : Modélisation par Analyse Sémantique (TF-IDF)
 
-**L'hypothèse :** Un "Double-clic" dans le module de *facturation* n'est pas le même qu'un "Double-clic" dans le *CRM*. L'identité de l'utilisateur ne réside pas dans l'action "cliquer", mais dans *sur quoi* il clique.
+**Hypothèse de raffinement :** L'identité de l'utilisateur ne réside pas dans l'action générique (ex: "Clic"), mais dans son contexte spécifique (ex: "Clic sur *infologic.crm.modules.CRM_COMPTE*").
 
-1.  **La nouvelle stratégie :** J'ai abandonné le regroupement simpliste. À la place, j'ai utilisé des expressions régulières (Regex) pour extraire les *patterns* spécifiques des logs bruts :
-    * Les écrans (ex: `infologic.core.accueil...`)
-    * Les configurations (ex: `MAINT`, `DEF_03/24`)
-    * Les chaînes (ex: `GP`, `ST`)
-2.  **La "signature" TF-IDF :** J'ai traité tous les patterns d'une session comme un seul "document" et j'ai appliqué `TfidfVectorizer` (avec 1000 features max). Cela a créé une véritable "signature logicielle" pour chaque session, basée sur les modules spécifiques que l'utilisateur fréquente.
-3.  **Le résultat :** En ré-entraînant le `RandomForestClassifier` avec ces nouveaux features (en plus des comptages et bigrammes de l'Acte 1), le F1-score (macro) est monté en flèche pour atteindre **0.88** !
+1.  **Conservation du Contexte :** Au lieu de regrouper les actions, des expressions régulières (Regex) ont été utilisées pour extraire les *patterns* sémantiques bruts des logs :
+    * Écrans (ex: `infologic.core.accueil...`)
+    * Configurations (ex: `MAINT`, `DEF_03/24`)
+    * Chaînes (ex: `GP`, `ST`)
+2.  **Création d'une "Signature" TF-IDF :** L'ensemble des patterns d'une session a été traité comme un "document". Un `TfidfVectorizer` (avec `max_features=1000`) a été appliqué pour transformer ces patterns en une "signature comportementale" numérique, capturant les modules et contextes les plus utilisés par chaque utilisateur.
+3.  **Amélioration de la Performance :** En combinant les features de l'Itération 1 (comptages, bigrammes) avec cette nouvelle matrice TF-IDF, le `RandomForestClassifier` a atteint un **F1-score (macro) de 0.88** en validation (et 0.87 en validation croisée).
 
-**Conclusion :** Ce n'est pas seulement *comment* vous cliquez qui vous définit, c'est *où* vous cliquez dans le logiciel.
+## 🏆 Modèle Final et Conclusion
 
-## 🏆 Le Modèle Champion
+Le modèle retenu est un **`RandomForestClassifier`** (n_estimators=300) entraîné sur l'ensemble de caractéristiques enrichi de l'Itération 2. Ce choix est justifié par sa capacité à gérer efficacement la haute dimensionnalité (plus de 1900 features) et la nature "sparse" (pleine de zéros) des données TF-IDF.
 
-Le **RandomForestClassifier** (n_estimators=300) a été le choix final. Il excelle à gérer des données "sparse" (comme le TF-IDF) et à trouver des relations complexes que d'autres modèles (comme la Régression Logistique ou les SVM) ont manquées.
+**Conclusion :** L'analyse démontre que l'identité d'un utilisateur est plus fortement corrélée aux *contextes* spécifiques de son interaction (les écrans et modules fréquentés) qu'à la simple *fréquence* de ses actions génériques.
 
-Le pipeline de feature engineering complet de l'Acte 2 a été appliqué au fichier `test.csv` pour générer le fichier de soumission `submission.csv`.
+Le pipeline de feature engineering complet a été appliqué au fichier `test.csv` pour générer le fichier de soumission final `submission.csv`.
 
-## 🛠️ Comment l'exécuter ?
+## 🛠️ Installation et Utilisation
 
-Envie de voir la magie opérer ?
+Pour répliquer cette analyse :
 
-1.  Assurez-vous d'avoir Python et Git installés.
-2.  (Recommandé) Créez un environnement virtuel pour garder les choses propres :
+1.  **Cloner le dépôt** (si applicable) :
+    ```bash
+    git clone [URL_DU_REPO]
+    cd [NOM_DU_PROJET]
+    ```
+
+2.  **(Recommandé) Créer un environnement virtuel** :
     ```bash
     python -m venv venv
     source venv/bin/activate  # Sur Windows: venv\Scripts\activate
     ```
-3.  Installez les outils nécessaires listés dans `requirements.txt` :
+
+3.  **Installer les dépendances** :
     ```bash
     pip install -r requirements.txt
     ```
-4.  Lancez Jupyter et ouvrez le notebook :
+
+4.  **Lancer Jupyter** :
     ```bash
     jupyter notebook "Notebook DS.ipynb"
     ```
+    Ouvrez le notebook et exécutez les cellules.
