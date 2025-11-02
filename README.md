@@ -1,5 +1,5 @@
 # Copilot_User_Classifier
-# Classification Comportementale des Utilisateurs de Logiciel (Projet Copilote)
+# # 🕵️‍♂️ Projet Copilote : Classification Comportementale des Utilisateurs de Copilote
 
 Ce projet de Data Science présente une méthodologie pour l'identification d'utilisateurs (variable `util`) basée sur l'analyse de leurs séquences d'actions et de leur comportement en session.
 
