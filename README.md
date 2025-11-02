@@ -15,7 +15,7 @@ Mon premier instinct face à un fichier `train.csv` contenant plus de 7000 actio
 
 1.  **Le grand nettoyage :** J'ai regroupé ces 7000+ actions en 35 catégories de base (ex: "Création d'écran", "Double-clic", "Lancement d'une stat").
 2.  **L'analyse des habitudes :** J'ai compté les occurrences de chaque catégorie. Pour aller plus loin, j'ai aussi utilisé des **bigrammes** (ex: "Affichage dialogue" → "Exécution bouton") avec `TfidfVectorizer` pour capturer les *séquences* d'actions.
-3.  **Premiers résultats :** J'ai testé plusieurs modèles (`SVC`, `MLP`, `LogisticRegression`). Le `RandomForestClassifier` a largement dominé, atteignant un F1-score (macro) d'environ **0.76**.
+3.  **Premiers résultats :** J'ai testé plusieurs modèles (`SVC`, `MLP`, `LogisticRegression`). Le `RandomForestClassifier` a largement dominé.
 
 C'était un bon début, mais je sentais qu'on passait à côté de l'essentiel.
 
