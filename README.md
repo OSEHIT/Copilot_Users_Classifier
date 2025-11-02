@@ -1,4 +1,4 @@
-# Copilot_Users_Classifier
+# Copilot_User_Classifier
 # 🕵️‍♂️ Projet Copilote : L'art de vous reconnaître à vos clics
 
 Imaginez-vous essayer de reconnaître un artiste non pas en voyant ses peintures, mais en analysant uniquement les traces de pinceau laissées sur sa palette. C'est le défi de ce projet !
